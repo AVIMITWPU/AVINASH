@@ -1,0 +1,142 @@
+const express = require("express");
+const mongoose = require("mongoose");
+const bodyParser = require("body-parser");
+
+const app = express();
+
+// Middleware
+app.use(bodyParser.json());
+
+// MongoDB connection
+mongoose.connect("mongodb://localhost/productsDB", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+mongoose.connection
+  .once("open", () => console.log("Connected to MongoDB"))
+  .on("error", (error) => console.log("MongoDB Connection Error: ", error));
+
+// Product model
+const Product = mongoose.model("Product", {
+  name: String,
+  description: String,
+  price: Number,
+});
+
+// Routes
+app.get("/api/products", (req, res) => {
+  Product.find().then((products) => res.json(products));
+});
+
+app.post("/api/products", (req, res) => {
+  const product = new Product({
+    name: req.body.name,
+    description: req.body.description,
+    price: req.body.price,
+  });
+
+  product.save().then(() => res.json({ success: true }));
+});
+
+app.put("/api/products/:id", (req, res) => {
+  Product.findByIdAndUpdate(req.params.id, req.body)
+    .then(() => res.json({ success: true }))
+    .catch((error) => res.json({ success: false, error }));
+});
+
+app.delete("/api/products/:id", (req, res) => {
+  Product.findByIdAndRemove(req.params.id)
+    .then(() => res.json({ success: true }))
+    .catch((error) => res.json({ success: false, error }));
+});
+
+// Start the server
+app.listen(3001, () => console.log("Server running on port 3001"));
+
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+
+const App = () => {
+  const [products, setProducts] = useState([]);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("");
+
+  // Fetch products
+  useEffect(() => {
+    axios.get("/api/products").then((response) => setProducts(response.data));
+  }, []);
+
+  // Add product
+  const addProduct = () => {
+    axios
+      .post("/api/products", { name, description, price })
+      .then(() => {
+        setName("");
+        setDescription("");
+        setPrice("");
+        fetchProducts();
+      })
+      .catch((error) => console.log(error));
+  };
+
+  // Delete product
+  const deleteProduct = (id) => {
+    axios
+      .delete(`/api/products/${id}`)
+      .then(() => fetchProducts())
+      .catch((error) => console.log(error));
+  };
+
+  const fetchProducts = () => {
+    axios.get("/api/products").then((response) => setProducts(response.data));
+  };
+
+  return (
+    <div>
+      <h1>Products</h1>
+      <ul>
+        {products.map((product) => (
+          <li key={product._id}>
+            {product.name} - {product.description} - {product.price}
+            <button onClick={() => deleteProduct(product._id)}>Delete</button>
+          </li>
+        ))}
+      </ul>
+      <h2>Add new product</h2>
+      <div>
+        <label>Name:</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </div>
+      <div>
+        <label>Description:</label>
+        <input
+          type="text"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <div>
+        <label>Price:</label>
+        <input
+          type="number"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+        />
+      </div>
+      <button onClick={addProduct}>Add Product</button>
+    </div>
+  );
+};
+
+export default App;
+
+import React from "react";
+import ReactDOM from "react-dom";
+import App from "./App";
+
+ReactDOM.render(<App />, document.getElementById("root"));
