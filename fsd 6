@@ -1,0 +1,28 @@
+const express = require('express');
+const app = express();
+
+// Define your API endpoints here
+app.get('/api/users', (req, res) => {
+  // Fetch users from database or any data source
+  const users = [
+    { id: 1, name: 'harsh' },
+   
+  ];
+  
+  res.json(users);
+});
+
+app.get('/api/users/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  
+  // Fetch a user from database or any data source
+  const user = { id: id, name: 'harsh' };
+  
+  res.json(user);
+});
+
+// Start the server
+const port = 3000;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
